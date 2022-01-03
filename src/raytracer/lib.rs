@@ -1,7 +1,10 @@
 use std::fs::File;
 use std::io::Write;
 
+pub mod hittable;
+pub mod hittable_list;
 pub mod ray;
+pub mod sphere;
 mod vec3;
 
 pub type Vec3 = vec3::Vec3;

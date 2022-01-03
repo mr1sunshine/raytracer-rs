@@ -1,26 +1,12 @@
-use raytracer::{ray::Ray, write_color, Color, Point3, Vec3};
-use std::io::Write;
-use std::{env, fs::File, process::exit};
+use raytracer::{
+    hittable::Hittable, hittable_list::HittableList, ray::Ray, sphere::Sphere, write_color, Color,
+    Point3, Vec3,
+};
+use std::{env, fs::File, io::Write, process::exit};
 
-fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> f64 {
-    let oc = r.orig() - center;
-    let a = Vec3::dot(&r.dir(), &r.dir());
-    let b = 2.0 * Vec3::dot(&oc, &r.dir());
-    let c = Vec3::dot(&oc, &oc) - radius.powf(2.0);
-    let discriminant = b.powf(2.0) - 4.0 * a * c;
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (-b - discriminant.sqrt()) / (2.0 * a)
-    }
-}
-
-fn ray_color(r: &Ray) -> Color {
-    let sphere_center = Point3::new(0.0, 0.0, -1.0);
-    let t = hit_sphere(sphere_center, 0.5, r);
-    if t > 0.0 {
-        let n = Vec3::unit_vector(&(r.at(t) - sphere_center));
-        return 0.5 * Color::new(n.x() + 1.0, n.y() + 1.0,n.z() + 1.0);
+fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
+    if let Some(rec) = world.hit(r, 0.0, std::f64::INFINITY) {
+        return 0.5 * (rec.normal() + Color::new(1.0, 1.0, 1.0));
     }
     let unit_dir = Vec3::unit_vector(&r.dir());
     let t = 0.5 * (unit_dir.y() + 1.0);
@@ -44,6 +30,11 @@ fn main() -> std::io::Result<()> {
     const ASPECT_RATIO: f64 = 16.0 / 9.0;
     const IMAGE_WIDTH: i32 = 400;
     const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
+
+    // World
+    let mut world = HittableList::default();
+    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
+    world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
 
     // Camera
     const VIEWPORT_HEIGHT: f64 = 2.0;
@@ -70,7 +61,7 @@ fn main() -> std::io::Result<()> {
             let v = j as f64 / (IMAGE_HEIGHT - 1) as f64;
             let dir = lower_left_corner + u * horizontal + v * vertical - origin;
             let r = Ray::new(origin, dir);
-            let color = ray_color(&r);
+            let color = ray_color(&r, &world);
             write_color(&mut file, &color)?;
         }
     }

@@ -22,7 +22,7 @@ impl Vec3 {
         self.e[2]
     }
 
-    fn len_squared(&self) -> f64 {
+    pub fn len_squared(&self) -> f64 {
         self.e[0].powf(2.0) + self.e[1].powf(2.0) + self.e[2].powf(2.0)
     }
 
