@@ -1,5 +1,6 @@
 use std::io::Write;
 use std::{env, fs::File, process::exit};
+use raytracer::{Color, write_color};
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -27,11 +28,8 @@ fn main() -> std::io::Result<()> {
             let r = i as f64 / (IMAGE_WIDTH - 1) as f64;
             let g = j as f64 / (IMAGE_HEIGHT - 1) as f64;
             let b = 0.25;
-
-            let ir = (255.999 * r) as i32;
-            let ig = (255.999 * g) as i32;
-            let ib = (255.999 * b) as i32;
-            writeln!(&mut file, "{} {} {}", ir, ig, ib)?;
+            let color = Color::new(r, g, b);
+            write_color(&mut file, &color)?;
         }
     }
 
