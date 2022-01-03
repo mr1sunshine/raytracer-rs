@@ -2,7 +2,20 @@ use raytracer::{ray::Ray, write_color, Color, Point3, Vec3};
 use std::io::Write;
 use std::{env, fs::File, process::exit};
 
+fn hit_sphere(center: Point3, radius: f64, r: &Ray) -> bool {
+    let oc = r.orig() - center;
+    let a = Vec3::dot(&r.dir(), &r.dir());
+    let b = 2.0 * Vec3::dot(&oc, &r.dir());
+    let c = Vec3::dot(&oc, &oc) - radius.powf(2.0);
+    let discriminant = b.powf(2.0) - 4.0 * a * c;
+    discriminant > 0.0
+}
+
 fn ray_color(r: &Ray) -> Color {
+    let sphere_center = Point3::new(0.0, 0.0, -1.0);
+    if hit_sphere(sphere_center, 0.5, r) {
+        return Color::new(1.0, 0.0,0.0);
+    }
     let unit_dir = Vec3::unit_vector(&r.dir());
     let t = 0.5 * (unit_dir.y() + 1.0);
 
