@@ -18,7 +18,7 @@ impl Vec3 {
         self.e[0]
     }
 
-    fn y(&self) -> f64 {
+    pub fn y(&self) -> f64 {
         self.e[1]
     }
 
@@ -46,9 +46,8 @@ impl Vec3 {
         )
     }
 
-    fn unit_vector(v: &Vec3) -> Vec3 {
-        let mut v = v.clone();
-        v / (v.len() as f64)
+    pub fn unit_vector(v: &Vec3) -> Vec3 {
+        *v / (v.len() as f64)
     }
 }
 
@@ -168,3 +167,5 @@ pub fn write_color(file: &mut File, color: &Color) -> std::io::Result<()> {
     writeln!(file, "{} {} {}", ir, ig, ib)?;
     Ok(())
 }
+
+pub mod ray;

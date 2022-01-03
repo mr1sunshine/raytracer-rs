@@ -6,4 +6,8 @@ Basically I'm trying to rewrite all the examples from C++ to Rust.
 
 This repository's goal is to learn more about raytracers and get more experience with Rust.
 
+At the moment raytracer produces the following image:
+
+![screenshot](screenshot.png)
+
 If you find any bugs or errors feel free to reach me on GH or provide a PR.
