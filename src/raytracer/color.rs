@@ -9,9 +9,9 @@ pub fn write_color(file: &mut File, color: &Color, samples_per_pixel: u32) -> st
     let mut b = color.z();
 
     let scale = 1.0 / (samples_per_pixel as f64);
-    r *= scale;
-    g *= scale;
-    b *= scale;
+    r = (scale * r).sqrt();
+    g = (scale * g).sqrt();
+    b = (scale * b).sqrt();
 
     let ir = (256.0 * clamp(r, 0.0, 0.999)) as i32;
     let ig = (256.0 * clamp(g, 0.0, 0.999)) as i32;

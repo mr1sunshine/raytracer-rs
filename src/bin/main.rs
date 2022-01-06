@@ -5,10 +5,17 @@ use raytracer::{
 };
 use std::{env, fs::File, io::Write, process::exit};
 
-fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
-    if let Some(rec) = world.hit(r, 0.0, std::f64::INFINITY) {
-        return 0.5 * (rec.normal() + Color::new(1.0, 1.0, 1.0));
+fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
+    // If we've exceeded the ray bounce limit, no more light is gathered.
+    if depth <= 0 {
+        return Color::new(0.0, 0.0, 0.0);
     }
+
+    if let Some(rec) = world.hit(r, 0.001, std::f64::INFINITY) {
+        let target = rec.p() + rec.normal() + Vec3::random_in_unit_sphere();
+        return 0.5 * ray_color(&Ray::new(rec.p(), target - rec.p()), world, depth - 1);
+    }
+
     let unit_dir = Vec3::unit_vector(&r.dir());
     let t = 0.5 * (unit_dir.y() + 1.0);
 
@@ -34,6 +41,7 @@ fn main() -> std::io::Result<()> {
     const IMAGE_WIDTH: i32 = 400;
     const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
     const SAMPLES_PER_PIXEL: u32 = 100;
+    const MAX_DEPTH: i32 = 50;
 
     // World
     let mut world = HittableList::default();
@@ -52,13 +60,14 @@ fn main() -> std::io::Result<()> {
 
     // Image data
     for j in (0..=(IMAGE_HEIGHT - 1)).rev() {
+        println!("Scanlines remaining: {}", j);
         for i in 0..IMAGE_WIDTH {
             let mut pixel_color = Color::new(0.0, 0.0, 0.0);
             for _ in 0..SAMPLES_PER_PIXEL {
                 let u = (i as f64 + rng.gen_range(0.0..1.0)) / (IMAGE_WIDTH - 1) as f64;
                 let v = (j as f64 + rng.gen_range(0.0..1.0)) / (IMAGE_HEIGHT - 1) as f64;
                 let r = cam.get_ray(u, v);
-                pixel_color += ray_color(&r, &world);
+                pixel_color += ray_color(&r, &world, MAX_DEPTH);
             }
             write_color(&mut file, &pixel_color, SAMPLES_PER_PIXEL)?;
         }
