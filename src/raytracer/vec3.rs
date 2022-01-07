@@ -69,6 +69,10 @@ impl Vec3 {
     pub fn unit_vector(v: &Vec3) -> Vec3 {
         *v / (v.len() as f64)
     }
+
+    pub fn random_unit_vector() -> Vec3 {
+        Vec3::unit_vector(&Vec3::random_in_unit_sphere())
+    }
 }
 
 impl Neg for Vec3 {
