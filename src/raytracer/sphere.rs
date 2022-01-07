@@ -29,9 +29,9 @@ impl Hittable for Sphere {
         t_min: f64,
         t_max: f64,
     ) -> Option<crate::hittable::HitRecord> {
-        let oc = r.orig() - self.center;
+        let oc = *r.orig() - self.center;
         let a = r.dir().len_squared();
-        let half_b = Vec3::dot(&oc, &r.dir());
+        let half_b = Vec3::dot(&oc, r.dir());
         let c = oc.len_squared() - self.radius.powf(2.0);
 
         let discriminant = half_b.powf(2.0) - a * c;

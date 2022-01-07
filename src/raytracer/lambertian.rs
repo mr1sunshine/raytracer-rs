@@ -16,14 +16,14 @@ impl Material for Lambertian {
         _r: &crate::ray::Ray,
         rec: &crate::hittable::HitRecord,
     ) -> Option<(crate::ray::Ray, Color)> {
-        let mut scatter_direction = rec.normal() + Vec3::random_unit_vector();
+        let mut scatter_direction = *rec.normal() + Vec3::random_unit_vector();
 
         // Catch degenerate scatter direction
         if scatter_direction.near_zero() {
-            scatter_direction = rec.normal();
+            scatter_direction = *rec.normal();
         }
 
-        let scattered = Ray::new(rec.p(), scatter_direction);
+        let scattered = Ray::new(*rec.p(), scatter_direction);
         Some((scattered, self.albedo))
     }
 }

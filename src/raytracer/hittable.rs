@@ -1,10 +1,6 @@
 use std::rc::Rc;
 
-use crate::{
-    material::{self, Material},
-    ray::Ray,
-    Point3, Vec3,
-};
+use crate::{material::Material, ray::Ray, Point3, Vec3};
 
 pub struct HitRecord {
     p: Point3,
@@ -38,13 +34,13 @@ impl HitRecord {
     }
 
     /// Get the hit record's p.
-    pub fn p(&self) -> Vec3 {
-        self.p
+    pub fn p(&self) -> &Vec3 {
+        &self.p
     }
 
     /// Get the hit record's normal.
-    pub fn normal(&self) -> Vec3 {
-        self.normal
+    pub fn normal(&self) -> &Vec3 {
+        &self.normal
     }
 
     /// Get the hit record's t.

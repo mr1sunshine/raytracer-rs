@@ -20,12 +20,12 @@ impl Material for Metal {
         r: &crate::ray::Ray,
         rec: &crate::hittable::HitRecord,
     ) -> Option<(crate::ray::Ray, Color)> {
-        let reflected = Vec3::reflect(&Vec3::unit_vector(&r.dir()), &rec.normal());
+        let reflected = Vec3::reflect(&Vec3::unit_vector(r.dir()), rec.normal());
         let scattered = Ray::new(
-            rec.p(),
+            *rec.p(),
             reflected + self.fuzz * Vec3::random_in_unit_sphere(),
         );
-        if Vec3::dot(&scattered.dir(), &rec.normal()) > 0.0 {
+        if Vec3::dot(scattered.dir(), rec.normal()) > 0.0 {
             Some((scattered, self.albedo))
         } else {
             None

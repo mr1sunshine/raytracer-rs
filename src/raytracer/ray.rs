@@ -15,12 +15,12 @@ impl Ray {
     }
 
     /// Get the ray's orig.
-    pub fn orig(&self) -> Point3 {
-        self.orig
+    pub fn orig(&self) -> &Point3 {
+        &self.orig
     }
 
     /// Get the ray's dir.
-    pub fn dir(&self) -> Vec3 {
-        self.dir
+    pub fn dir(&self) -> &Vec3 {
+        &self.dir
     }
 }

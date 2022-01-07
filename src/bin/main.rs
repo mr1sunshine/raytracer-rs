@@ -19,7 +19,7 @@ fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
         }
     }
 
-    let unit_dir = Vec3::unit_vector(&r.dir());
+    let unit_dir = Vec3::unit_vector(r.dir());
     let t = 0.5 * (unit_dir.y() + 1.0);
 
     let start_value = Color::new(1.0, 1.0, 1.0);
