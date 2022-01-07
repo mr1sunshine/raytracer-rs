@@ -16,3 +16,5 @@ mod lambertian;
 pub type Lambertian = lambertian::Lambertian;
 mod metal;
 pub type Metal = metal::Metal;
+mod dielectric;
+pub type Dielectric = dielectric::Dielectric;

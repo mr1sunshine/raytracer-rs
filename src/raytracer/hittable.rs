@@ -52,6 +52,11 @@ impl HitRecord {
     pub fn material(&self) -> &dyn Material {
         self.material.as_ref()
     }
+
+    /// Get the hit record's front face.
+    pub fn front_face(&self) -> bool {
+        self.front_face
+    }
 }
 
 pub trait Hittable {
