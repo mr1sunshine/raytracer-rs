@@ -1,14 +1,27 @@
-use crate::{ray::Ray, Point3, Vec3};
+use std::rc::Rc;
+
+use crate::{
+    material::{self, Material},
+    ray::Ray,
+    Point3, Vec3,
+};
 
 pub struct HitRecord {
     p: Point3,
     normal: Vec3,
     t: f64,
     front_face: bool,
+    material: Rc<dyn Material>,
 }
 
 impl HitRecord {
-    pub fn new(p: Point3, outward_normal: Vec3, t: f64, r: &Ray) -> Self {
+    pub fn new(
+        p: Point3,
+        outward_normal: Vec3,
+        t: f64,
+        r: &Ray,
+        material: Rc<dyn Material>,
+    ) -> Self {
         let front_face = Vec3::dot(&r.dir(), &outward_normal) < 0.0;
         let normal = if front_face {
             outward_normal
@@ -20,6 +33,7 @@ impl HitRecord {
             normal,
             t,
             front_face,
+            material,
         }
     }
 
@@ -36,6 +50,11 @@ impl HitRecord {
     /// Get the hit record's t.
     pub fn t(&self) -> f64 {
         self.t
+    }
+
+    /// Get a reference to the hit record's material.
+    pub fn material(&self) -> &dyn Material {
+        self.material.as_ref()
     }
 }
 

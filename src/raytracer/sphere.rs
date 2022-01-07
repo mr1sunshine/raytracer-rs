@@ -1,16 +1,24 @@
+use std::rc::Rc;
+
 use crate::{
     hittable::{HitRecord, Hittable},
+    material::Material,
     Point3, Vec3,
 };
 
 pub struct Sphere {
     center: Point3,
     radius: f64,
+    material: Rc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64) -> Self {
-        Self { center, radius }
+    pub fn new(center: Point3, radius: f64, material: Rc<dyn Material>) -> Self {
+        Self {
+            center,
+            radius,
+            material,
+        }
     }
 }
 
@@ -45,6 +53,6 @@ impl Hittable for Sphere {
         let p = r.at(root);
         let normal = (p - self.center) / self.radius;
 
-        Some(HitRecord::new(p, normal, root, r))
+        Some(HitRecord::new(p, normal, root, r, self.material.clone()))
     }
 }

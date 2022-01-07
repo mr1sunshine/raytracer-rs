@@ -11,3 +11,8 @@ pub type Vec3 = vec3::Vec3;
 pub type Point3 = vec3::Vec3;
 pub type Color = vec3::Vec3;
 
+pub mod material;
+mod lambertian;
+pub type Lambertian = lambertian::Lambertian;
+mod metal;
+pub type Metal = metal::Metal;
