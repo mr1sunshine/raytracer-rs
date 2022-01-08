@@ -1,5 +1,5 @@
-use crate::{hittable::HitRecord, Color, ray::Ray};
+use crate::{hittable::HitRecord, ray::Ray, Color};
 
-pub trait Material {
+pub trait Material: Sync + Send {
     fn scatter(&self, r: &Ray, rec: &HitRecord) -> Option<(Ray, Color)>;
 }

@@ -1,15 +1,11 @@
 use rand::Rng;
+use rayon::prelude::*;
 use raytracer::{
-    camera::Camera,
-    color::write_color,
-    hittable::Hittable,
-    hittable_list::{self, HittableList},
-    material::Material,
-    ray::Ray,
-    sphere::Sphere,
-    Color, Dielectric, Lambertian, Metal, Point3, Vec3,
+    camera::Camera, color::write_color, hittable::Hittable, hittable_list::HittableList,
+    material::Material, ray::Ray, sphere::Sphere, Color, Dielectric, Lambertian, Metal, Point3,
+    Vec3,
 };
-use std::{env, fs::File, io::Write, process::exit, rc::Rc};
+use std::{env, fs::File, io::Write, process::exit, rc::Rc, sync::Arc};
 
 fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -39,7 +35,7 @@ fn random_scene() -> HittableList {
 
     let mut world = HittableList::default();
 
-    let ground_material = Rc::new(Lambertian::new(&Color::new(0.5, 0.5, 0.5)));
+    let ground_material = Arc::new(Lambertian::new(&Color::new(0.5, 0.5, 0.5)));
     world.add(Box::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -57,17 +53,17 @@ fn random_scene() -> HittableList {
             );
 
             if (center - Point3::new(4.0, 0.2, 0.0)).len() > 0.9 {
-                let sphere_material: Rc<dyn Material> = if choose_mat < 0.8 {
+                let sphere_material: Arc<dyn Material> = if choose_mat < 0.8 {
                     // diffuse
                     let albedo = Color::random_vec() * Color::random_vec();
-                    Rc::new(Lambertian::new(&albedo))
+                    Arc::new(Lambertian::new(&albedo))
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random(0.5, 1.0);
                     let fuzz = rng.gen_range(0.0..0.5);
-                    Rc::new(Metal::new(&albedo, fuzz))
+                    Arc::new(Metal::new(&albedo, fuzz))
                 } else {
-                    Rc::new(Dielectric::new(1.5))
+                    Arc::new(Dielectric::new(1.5))
                 };
 
                 world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
@@ -75,25 +71,59 @@ fn random_scene() -> HittableList {
         }
     }
 
-    let material1 = Rc::new(Dielectric::new(1.5));
+    let material1 = Arc::new(Dielectric::new(1.5));
     world.add(Box::new(Sphere::new(
         Point3::new(0.0, 1.0, 0.0),
         1.0,
         material1,
     )));
-    let material2 = Rc::new(Lambertian::new(&Color::new(0.4, 0.2, 0.1)));
+    let material2 = Arc::new(Lambertian::new(&Color::new(0.4, 0.2, 0.1)));
     world.add(Box::new(Sphere::new(
         Point3::new(-4.0, 1.0, 0.0),
         1.0,
         material2,
     )));
-    let material3 = Rc::new(Metal::new(&Color::new(0.7, 0.6, 0.5), 0.0));
+    let material3 = Arc::new(Metal::new(&Color::new(0.7, 0.6, 0.5), 0.0));
     world.add(Box::new(Sphere::new(
         Point3::new(4.0, 1.0, 0.0),
         1.0,
         material3,
     )));
     world
+}
+
+fn generate_pixel_color(
+    samples_per_pixel: usize,
+    column: i32,
+    row: i32,
+    image_width: i32,
+    image_height: i32,
+    camera: &Camera,
+    world: &dyn Hittable,
+    max_depth: i32,
+) -> Color {
+    // for _ in 0..samples_per_pixel {
+    //     let u = (column as f64 + rng.gen_range(0.0..1.0)) / (image_width - 1) as f64;
+    //     let v = (row as f64 + rng.gen_range(0.0..1.0)) / (image_height - 1) as f64;
+    //     let r = camera.get_ray(u, v);
+    //     pixel_color += ray_color(&r, world, max_depth);
+    // }
+
+    let pixels: Vec<_> = (0..samples_per_pixel)
+        .into_par_iter()
+        .map(|_| {
+            let mut rng = rand::thread_rng();
+
+            let u = (column as f64 + rng.gen_range(0.0..1.0)) / (image_width - 1) as f64;
+            let v = (row as f64 + rng.gen_range(0.0..1.0)) / (image_height - 1) as f64;
+            let r = camera.get_ray(u, v);
+            ray_color(&r, world, max_depth)
+        })
+        .collect();
+
+    pixels
+        .iter()
+        .fold(Color::new(0.0, 0.0, 0.0), |sum, &val| sum + val)
 }
 
 fn main() -> std::io::Result<()> {
@@ -141,18 +171,49 @@ fn main() -> std::io::Result<()> {
     writeln!(&mut file, "{} {}", IMAGE_WIDTH, IMAGE_HEIGHT)?;
     writeln!(&mut file, "255")?;
 
-    // Image data
-    for j in (0..=(IMAGE_HEIGHT - 1)).rev() {
+    // // Image data
+    // for j in (0..=(IMAGE_HEIGHT - 1)).rev() {
+    //     println!("Scanlines remaining: {}", j);
+    //     for i in 0..IMAGE_WIDTH {
+    //         let pixel_color = generate_pixel_color(
+    //             SAMPLES_PER_PIXEL as usize,
+    //             i,
+    //             j,
+    //             IMAGE_WIDTH,
+    //             IMAGE_HEIGHT,
+    //             &cam,
+    //             &world,
+    //             MAX_DEPTH,
+    //         );
+    //         write_color(&mut file, &pixel_color, SAMPLES_PER_PIXEL)?;
+    //     }
+    // }
+
+    let pixels : Vec<Vec<_>> = (0..IMAGE_HEIGHT).into_par_iter().rev().map(|j| {
         println!("Scanlines remaining: {}", j);
-        for i in 0..IMAGE_WIDTH {
-            let mut pixel_color = Color::new(0.0, 0.0, 0.0);
-            for _ in 0..SAMPLES_PER_PIXEL {
-                let u = (i as f64 + rng.gen_range(0.0..1.0)) / (IMAGE_WIDTH - 1) as f64;
-                let v = (j as f64 + rng.gen_range(0.0..1.0)) / (IMAGE_HEIGHT - 1) as f64;
-                let r = cam.get_ray(u, v);
-                pixel_color += ray_color(&r, &world, MAX_DEPTH);
-            }
-            write_color(&mut file, &pixel_color, SAMPLES_PER_PIXEL)?;
+
+        let row: Vec<_> = (0..IMAGE_WIDTH)
+            .into_par_iter()
+            .map(|i| {
+                generate_pixel_color(
+                    SAMPLES_PER_PIXEL as usize,
+                    i,
+                    j,
+                    IMAGE_WIDTH,
+                    IMAGE_HEIGHT,
+                    &cam,
+                    &world,
+                    MAX_DEPTH,
+                )
+            })
+            .collect();
+
+        row
+    }).collect();
+
+    for row in &pixels {
+        for pixel_color in row {
+            write_color(&mut file, pixel_color, SAMPLES_PER_PIXEL)?;
         }
     }
 
