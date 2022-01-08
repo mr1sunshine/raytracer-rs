@@ -1,11 +1,12 @@
-use rand::Rng;
+use indicatif::{ProgressBar, ProgressStyle};
+use rand::{distributions::Uniform, prelude::Distribution, Rng};
 use rayon::prelude::*;
 use raytracer::{
     camera::Camera, color::write_color, hittable::Hittable, hittable_list::HittableList,
     material::Material, ray::Ray, sphere::Sphere, Color, Dielectric, Lambertian, Metal, Point3,
     Vec3,
 };
-use std::{env, fs::File, io::Write, process::exit, rc::Rc, sync::Arc};
+use std::{env, fs::File, io::Write, process::exit, sync::Arc};
 
 fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -42,14 +43,14 @@ fn random_scene() -> HittableList {
         ground_material,
     )));
 
-    let range = 0.0..0.1;
+    let between = Uniform::from(0.0..0.1);
     for a in -11..11 {
         for b in -11..11 {
-            let choose_mat = rng.gen_range(range.clone());
+            let choose_mat = between.sample(&mut rng);
             let center = Point3::new(
-                a as f64 + 0.9 * rng.gen_range(range.clone()),
+                a as f64 + 0.9 * between.sample(&mut rng),
                 0.2,
-                b as f64 + 0.9 * rng.gen_range(range.clone()),
+                b as f64 + 0.9 * between.sample(&mut rng),
             );
 
             if (center - Point3::new(4.0, 0.2, 0.0)).len() > 0.9 {
@@ -102,13 +103,6 @@ fn generate_pixel_color(
     world: &dyn Hittable,
     max_depth: i32,
 ) -> Color {
-    // for _ in 0..samples_per_pixel {
-    //     let u = (column as f64 + rng.gen_range(0.0..1.0)) / (image_width - 1) as f64;
-    //     let v = (row as f64 + rng.gen_range(0.0..1.0)) / (image_height - 1) as f64;
-    //     let r = camera.get_ray(u, v);
-    //     pixel_color += ray_color(&r, world, max_depth);
-    // }
-
     let pixels: Vec<_> = (0..samples_per_pixel)
         .into_par_iter()
         .map(|_| {
@@ -127,8 +121,6 @@ fn generate_pixel_color(
 }
 
 fn main() -> std::io::Result<()> {
-    let mut rng = rand::thread_rng();
-
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("Please specify output file as command line argument");
@@ -171,45 +163,36 @@ fn main() -> std::io::Result<()> {
     writeln!(&mut file, "{} {}", IMAGE_WIDTH, IMAGE_HEIGHT)?;
     writeln!(&mut file, "255")?;
 
-    // // Image data
-    // for j in (0..=(IMAGE_HEIGHT - 1)).rev() {
-    //     println!("Scanlines remaining: {}", j);
-    //     for i in 0..IMAGE_WIDTH {
-    //         let pixel_color = generate_pixel_color(
-    //             SAMPLES_PER_PIXEL as usize,
-    //             i,
-    //             j,
-    //             IMAGE_WIDTH,
-    //             IMAGE_HEIGHT,
-    //             &cam,
-    //             &world,
-    //             MAX_DEPTH,
-    //         );
-    //         write_color(&mut file, &pixel_color, SAMPLES_PER_PIXEL)?;
-    //     }
-    // }
+    let pb = ProgressBar::new((IMAGE_HEIGHT * IMAGE_WIDTH) as u64);
+    pb.set_style(ProgressStyle::default_bar()
+        .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({eta_precise})"));
+        // .progress_chars("#>-"));
 
-    let pixels : Vec<Vec<_>> = (0..IMAGE_HEIGHT).into_par_iter().rev().map(|j| {
-        println!("Scanlines remaining: {}", j);
+    // Image data
+    let pixels: Vec<Vec<_>> = (0..IMAGE_HEIGHT)
+        .into_par_iter()
+        .rev()
+        .map(|j| {
+            let row: Vec<_> = (0..IMAGE_WIDTH)
+                .into_par_iter()
+                .map(|i| {
+                    pb.inc(1);
+                    generate_pixel_color(
+                        SAMPLES_PER_PIXEL as usize,
+                        i,
+                        j,
+                        IMAGE_WIDTH,
+                        IMAGE_HEIGHT,
+                        &cam,
+                        &world,
+                        MAX_DEPTH,
+                    )
+                })
+                .collect();
 
-        let row: Vec<_> = (0..IMAGE_WIDTH)
-            .into_par_iter()
-            .map(|i| {
-                generate_pixel_color(
-                    SAMPLES_PER_PIXEL as usize,
-                    i,
-                    j,
-                    IMAGE_WIDTH,
-                    IMAGE_HEIGHT,
-                    &cam,
-                    &world,
-                    MAX_DEPTH,
-                )
-            })
-            .collect();
-
-        row
-    }).collect();
+            row
+        })
+        .collect();
 
     for row in &pixels {
         for pixel_color in row {
