@@ -12,7 +12,7 @@ impl Vec3 {
         Self { e: [e0, e1, e2] }
     }
 
-    fn random(min: f64, max: f64) -> Self {
+    pub fn random(min: f64, max: f64) -> Self {
         let mut rng = rand::thread_rng();
         let range = min..max;
         Self {
@@ -22,6 +22,10 @@ impl Vec3 {
                 rng.gen_range(range),
             ],
         }
+    }
+
+    pub fn random_vec() -> Vec3 {
+        Vec3::random(0.0, 1.0)
     }
 
     pub fn random_in_unit_sphere() -> Self {
