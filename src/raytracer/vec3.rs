@@ -50,7 +50,7 @@ impl Vec3 {
         self.e[0].powf(2.0) + self.e[1].powf(2.0) + self.e[2].powf(2.0)
     }
 
-    fn len(&self) -> f64 {
+    pub fn len(&self) -> f64 {
         f64::sqrt(self.len_squared())
     }
 
@@ -95,8 +95,25 @@ impl Vec3 {
     pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
         let cos_theta = Vec3::dot(&-(*uv), n).min(1.0);
         let r_out_perp = etai_over_etat * (*uv + cos_theta * *n);
-        let r_out_parallel = - (1.0 - r_out_perp.len_squared()).abs().sqrt() * *n;
+        let r_out_parallel = -(1.0 - r_out_perp.len_squared()).abs().sqrt() * *n;
         r_out_perp + r_out_parallel
+    }
+
+    pub fn random_in_unit_disk() -> Vec3 {
+        let mut rng = rand::thread_rng();
+        let range = -1.0..1.0;
+
+        loop {
+            let p = Vec3::new(
+                rng.gen_range(range.clone()),
+                rng.gen_range(range.clone()),
+                0.0,
+            );
+            if p.len_squared() >= 1.0 {
+                continue;
+            }
+            return p;
+        }
     }
 }
 

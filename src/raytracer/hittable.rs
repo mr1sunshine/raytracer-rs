@@ -18,7 +18,7 @@ impl HitRecord {
         r: &Ray,
         material: Rc<dyn Material>,
     ) -> Self {
-        let front_face = Vec3::dot(&r.dir(), &outward_normal) < 0.0;
+        let front_face = Vec3::dot(r.dir(), &outward_normal) < 0.0;
         let normal = if front_face {
             outward_normal
         } else {
