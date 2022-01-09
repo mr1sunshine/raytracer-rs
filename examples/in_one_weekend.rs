@@ -1,43 +1,9 @@
-use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rand::Rng;
-use rayon::iter::ParallelIterator;
-use rayon::prelude::*;
 use raytracer::{
-    camera::Camera, color::write_color, hittable::Hittable, hittable_list::HittableList,
-    material::Material, ray::Ray, sphere::Sphere, Color, Dielectric, Lambertian, Metal, Point3,
-    Vec3,
+    camera::Camera, hittable_list::HittableList, material::Material, sphere::Sphere, Color,
+    Dielectric, Lambertian, Metal, Point3, Renderer, Vec3,
 };
-use std::{
-    env,
-    fs::File,
-    io::{self, Write},
-    process::exit,
-    sync::Arc,
-    time::Instant,
-};
-
-fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
-    // If we've exceeded the ray bounce limit, no more light is gathered.
-    if depth <= 0 {
-        return Color::new(0.0, 0.0, 0.0);
-    }
-
-    if let Some(rec) = world.hit(r, 0.001, std::f64::INFINITY) {
-        if let Some((scattered, attenuation)) = rec.material().scatter(r, &rec) {
-            return attenuation * ray_color(&scattered, world, depth - 1);
-        } else {
-            return Color::new(0.0, 0.0, 0.0);
-        }
-    }
-
-    let unit_dir = Vec3::unit_vector(r.dir());
-    let t = 0.5 * (unit_dir.y() + 1.0);
-
-    let start_value = Color::new(1.0, 1.0, 1.0);
-    let end_value = Color::new(0.5, 0.7, 1.0);
-
-    (1.0 - t) * start_value + t * end_value
-}
+use std::{env, process::exit, sync::Arc};
 
 fn random_scene() -> HittableList {
     let mut rng = rand::thread_rng();
@@ -100,48 +66,18 @@ fn random_scene() -> HittableList {
     world
 }
 
-fn generate_pixel_color(
-    samples_per_pixel: usize,
-    column: i32,
-    row: i32,
-    image_width: i32,
-    image_height: i32,
-    camera: &Camera,
-    world: &dyn Hittable,
-    max_depth: i32,
-) -> Color {
-    let pixels: Vec<_> = (0..samples_per_pixel)
-        .into_par_iter()
-        .map(|_| {
-            let mut rng = rand::thread_rng();
-
-            let u = (column as f64 + rng.gen::<f64>()) / (image_width - 1) as f64;
-            let v = (row as f64 + rng.gen::<f64>()) / (image_height - 1) as f64;
-            let r = camera.get_ray(u, v);
-            ray_color(&r, world, max_depth)
-        })
-        .collect();
-
-    pixels
-        .iter()
-        .fold(Color::new(0.0, 0.0, 0.0), |sum, &val| sum + val)
-}
-
 fn main() -> std::io::Result<()> {
-    let now = Instant::now();
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("Please specify output file as command line argument");
         exit(-1);
     }
 
-    let mut file = File::create(&args[1])?;
-
     // Image
     const ASPECT_RATIO: f64 = 3.0 / 2.0;
     const IMAGE_WIDTH: i32 = 1200;
     const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
-    const SAMPLES_PER_PIXEL: u32 = 500;
+    const SAMPLES_PER_PIXEL: u32 = 10;
     const MAX_DEPTH: i32 = 50;
 
     // World
@@ -154,7 +90,7 @@ fn main() -> std::io::Result<()> {
     let aperture = 0.1;
 
     // Camera
-    let cam = Camera::new(
+    let camera = Camera::new(
         look_from,
         look_at,
         vup,
@@ -165,63 +101,14 @@ fn main() -> std::io::Result<()> {
     );
 
     // Render
-
-    // Headers
-    writeln!(&mut file, "P3")?;
-    writeln!(&mut file, "{} {}", IMAGE_WIDTH, IMAGE_HEIGHT)?;
-    writeln!(&mut file, "255")?;
-
-    let pb = ProgressBar::new(IMAGE_HEIGHT as u64);
-    pb.set_style(ProgressStyle::default_bar().template(
-        "{spinner:.green} {msg} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({eta_precise})",
-    ));
-    pb.set_message("Generating image data");
-
-    // Image data
-    let pixels: Vec<Vec<_>> = (0..IMAGE_HEIGHT)
-        .into_par_iter()
-        .rev()
-        .progress_with(pb)
-        .map(|j| {
-            (0..IMAGE_WIDTH)
-                .into_par_iter()
-                .map(|i| {
-                    generate_pixel_color(
-                        SAMPLES_PER_PIXEL as usize,
-                        i,
-                        j,
-                        IMAGE_WIDTH,
-                        IMAGE_HEIGHT,
-                        &cam,
-                        &world,
-                        MAX_DEPTH,
-                    )
-                })
-                .collect::<Vec<_>>()
-        })
-        .collect();
-
-    let elapsed = now.elapsed();
-    println!("Data generation time: {:.2?}", elapsed);
-
-    let pb = ProgressBar::new(IMAGE_HEIGHT as u64);
-    pb.set_style(ProgressStyle::default_bar().template(
-        "{spinner:.green} {msg} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({eta_precise})",
-    ));
-    pb.set_message("Encoding image");
-
-    for row in &pixels {
-        for pixel_color in row {
-            write_color(&mut file, pixel_color, SAMPLES_PER_PIXEL)?;
-        }
-        pb.inc(1);
-    }
-    pb.finish_with_message("Image encoded");
-
-    let elapsed = now.elapsed();
-    println!("Running time: {:.2?}", elapsed);
-
-    io::stdout().flush().unwrap();
+    let mut renderer = Renderer::new(
+        IMAGE_WIDTH,
+        IMAGE_HEIGHT,
+        SAMPLES_PER_PIXEL,
+        MAX_DEPTH,
+        &args[1],
+    )?;
+    renderer.render(&camera, &world)?;
 
     Ok(())
 }

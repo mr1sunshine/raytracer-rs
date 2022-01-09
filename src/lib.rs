@@ -18,3 +18,6 @@ mod metal;
 pub type Metal = metal::Metal;
 mod dielectric;
 pub type Dielectric = dielectric::Dielectric;
+
+mod renderer;
+pub type Renderer = renderer::Renderer;
