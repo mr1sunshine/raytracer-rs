@@ -1,5 +1,7 @@
+use indicatif::ParallelProgressIterator;
 use indicatif::{ProgressBar, ProgressStyle};
-use rand::{distributions::Uniform, prelude::Distribution, Rng};
+use rand::Rng;
+use rayon::iter::ParallelIterator;
 use rayon::prelude::*;
 use raytracer::{
     camera::Camera, color::write_color, hittable::Hittable, hittable_list::HittableList,
@@ -43,14 +45,13 @@ fn random_scene() -> HittableList {
         ground_material,
     )));
 
-    let between = Uniform::from(0.0..0.1);
     for a in -11..11 {
         for b in -11..11 {
-            let choose_mat = between.sample(&mut rng);
+            let choose_mat = rng.gen::<f64>();
             let center = Point3::new(
-                a as f64 + 0.9 * between.sample(&mut rng),
+                a as f64 + 0.9 * rng.gen::<f64>(),
                 0.2,
-                b as f64 + 0.9 * between.sample(&mut rng),
+                b as f64 + 0.9 * rng.gen::<f64>(),
             );
 
             if (center - Point3::new(4.0, 0.2, 0.0)).len() > 0.9 {
@@ -163,20 +164,21 @@ fn main() -> std::io::Result<()> {
     writeln!(&mut file, "{} {}", IMAGE_WIDTH, IMAGE_HEIGHT)?;
     writeln!(&mut file, "255")?;
 
-    let pb = ProgressBar::new((IMAGE_HEIGHT * IMAGE_WIDTH) as u64);
-    pb.set_style(ProgressStyle::default_bar()
-        .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({eta_precise})"));
-        // .progress_chars("#>-"));
+    let pb = ProgressBar::new(IMAGE_HEIGHT as u64);
+    pb.set_style(ProgressStyle::default_bar().template(
+        "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({eta_precise})",
+    ));
 
     // Image data
     let pixels: Vec<Vec<_>> = (0..IMAGE_HEIGHT)
         .into_par_iter()
+        // .progress_count(IMAGE_HEIGHT as u64)
         .rev()
+        .progress_with(pb)
         .map(|j| {
             let row: Vec<_> = (0..IMAGE_WIDTH)
                 .into_par_iter()
                 .map(|i| {
-                    pb.inc(1);
                     generate_pixel_color(
                         SAMPLES_PER_PIXEL as usize,
                         i,
@@ -190,10 +192,13 @@ fn main() -> std::io::Result<()> {
                 })
                 .collect();
 
+            // pb.inc(1);
+
             row
         })
         .collect();
 
+    println!("Calculating finished. Writing output image.");
     for row in &pixels {
         for pixel_color in row {
             write_color(&mut file, pixel_color, SAMPLES_PER_PIXEL)?;

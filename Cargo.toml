@@ -12,4 +12,4 @@ path = "src/raytracer/lib.rs"
 [dependencies]
 rand = "0.8"
 rayon = "1.5"
-indicatif = "0.16"
+indicatif = { version = "0.16", features = ["rayon"] }
