@@ -1,5 +1,4 @@
-use indicatif::ParallelProgressIterator;
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rand::Rng;
 use rayon::iter::ParallelIterator;
 use rayon::prelude::*;
@@ -109,8 +108,8 @@ fn generate_pixel_color(
         .map(|_| {
             let mut rng = rand::thread_rng();
 
-            let u = (column as f64 + rng.gen_range(0.0..1.0)) / (image_width - 1) as f64;
-            let v = (row as f64 + rng.gen_range(0.0..1.0)) / (image_height - 1) as f64;
+            let u = (column as f64 + rng.gen::<f64>()) / (image_width - 1) as f64;
+            let v = (row as f64 + rng.gen::<f64>()) / (image_height - 1) as f64;
             let r = camera.get_ray(u, v);
             ray_color(&r, world, max_depth)
         })
@@ -172,11 +171,10 @@ fn main() -> std::io::Result<()> {
     // Image data
     let pixels: Vec<Vec<_>> = (0..IMAGE_HEIGHT)
         .into_par_iter()
-        // .progress_count(IMAGE_HEIGHT as u64)
         .rev()
         .progress_with(pb)
         .map(|j| {
-            let row: Vec<_> = (0..IMAGE_WIDTH)
+            (0..IMAGE_WIDTH)
                 .into_par_iter()
                 .map(|i| {
                     generate_pixel_color(
@@ -190,11 +188,7 @@ fn main() -> std::io::Result<()> {
                         MAX_DEPTH,
                     )
                 })
-                .collect();
-
-            // pb.inc(1);
-
-            row
+                .collect::<Vec<_>>()
         })
         .collect();
 
