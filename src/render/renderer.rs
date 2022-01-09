@@ -1,11 +1,13 @@
-use crate::{camera::Camera, hittable::Hittable, ray::Ray, utility::clamp, Color, Vec3};
+use crate::{hittable::Hittable, ray::Ray, Color, Vec3};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rand::Rng;
 use rayon::iter::IntoParallelIterator;
 use rayon::prelude::*;
 use std::fs::File;
-use std::io::{Write, self};
+use std::io::{self, Write};
 use std::time::Instant;
+
+use super::camera::Camera;
 
 pub struct Renderer {
     width: i32,
@@ -111,19 +113,19 @@ impl Renderer {
         let mut b = color.z();
 
         let scale = 1.0 / (self.samples_per_pixel as f64);
-        r = (scale * r).sqrt();
-        g = (scale * g).sqrt();
-        b = (scale * b).sqrt();
+        r = (scale * r).sqrt().clamp(0.0, 0.999);
+        g = (scale * g).sqrt().clamp(0.0, 0.999);
+        b = (scale * b).sqrt().clamp(0.0, 0.999);
 
-        let ir = (256.0 * clamp(r, 0.0, 0.999)) as i32;
-        let ig = (256.0 * clamp(g, 0.0, 0.999)) as i32;
-        let ib = (256.0 * clamp(b, 0.0, 0.999)) as i32;
+        let ir = (256.0 * r) as i32;
+        let ig = (256.0 * g) as i32;
+        let ib = (256.0 * b) as i32;
 
         writeln!(self.output, "{} {} {}", ir, ig, ib)?;
         Ok(())
     }
 
-    fn encode_image(&mut self, pixels: &Vec<Vec<Color>>) -> std::io::Result<()> {
+    fn encode_image(&mut self, pixels: &[Vec<Color>]) -> std::io::Result<()> {
         let pb = ProgressBar::new(self.height as u64);
         pb.set_style(ProgressStyle::default_bar().template(
             "{spinner:.green} {msg} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({eta_precise})",

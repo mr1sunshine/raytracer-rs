@@ -1,7 +1,7 @@
 use rand::Rng;
 use raytracer::{
-    camera::Camera, hittable_list::HittableList, material::Material, sphere::Sphere, Color,
-    Dielectric, Lambertian, Metal, Point3, Renderer, Vec3,
+    hittable_list::HittableList, material::Material, sphere::Sphere, Camera, Color, Dielectric,
+    Lambertian, Metal, Point3, Renderer, Vec3,
 };
 use std::{env, process::exit, sync::Arc};
 

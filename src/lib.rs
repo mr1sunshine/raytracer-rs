@@ -2,9 +2,6 @@ pub mod hittable;
 pub mod hittable_list;
 pub mod ray;
 pub mod sphere;
-pub mod camera;
-pub mod color;
-pub mod utility;
 
 mod vec3;
 pub type Vec3 = vec3::Vec3;
@@ -19,5 +16,6 @@ pub type Metal = metal::Metal;
 mod dielectric;
 pub type Dielectric = dielectric::Dielectric;
 
-mod renderer;
-pub type Renderer = renderer::Renderer;
+mod render;
+pub type Renderer = render::renderer::Renderer;
+pub type Camera = render::camera::Camera;
