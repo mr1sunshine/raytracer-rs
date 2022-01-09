@@ -7,7 +7,14 @@ use raytracer::{
     material::Material, ray::Ray, sphere::Sphere, Color, Dielectric, Lambertian, Metal, Point3,
     Vec3,
 };
-use std::{env, fs::File, io::Write, process::exit, sync::Arc};
+use std::{
+    env,
+    fs::File,
+    io::{self, Write},
+    process::exit,
+    sync::Arc,
+    time::Instant,
+};
 
 fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -121,6 +128,7 @@ fn generate_pixel_color(
 }
 
 fn main() -> std::io::Result<()> {
+    let now = Instant::now();
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("Please specify output file as command line argument");
@@ -165,8 +173,9 @@ fn main() -> std::io::Result<()> {
 
     let pb = ProgressBar::new(IMAGE_HEIGHT as u64);
     pb.set_style(ProgressStyle::default_bar().template(
-        "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({eta_precise})",
+        "{spinner:.green} {msg} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({eta_precise})",
     ));
+    pb.set_message("Generating image data");
 
     // Image data
     let pixels: Vec<Vec<_>> = (0..IMAGE_HEIGHT)
@@ -192,12 +201,27 @@ fn main() -> std::io::Result<()> {
         })
         .collect();
 
-    println!("Calculating finished. Writing output image.");
+    let elapsed = now.elapsed();
+    println!("Data generation time: {:.2?}", elapsed);
+
+    let pb = ProgressBar::new(IMAGE_HEIGHT as u64);
+    pb.set_style(ProgressStyle::default_bar().template(
+        "{spinner:.green} {msg} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({eta_precise})",
+    ));
+    pb.set_message("Encoding image");
+
     for row in &pixels {
         for pixel_color in row {
             write_color(&mut file, pixel_color, SAMPLES_PER_PIXEL)?;
         }
+        pb.inc(1);
     }
+    pb.finish_with_message("Image encoded");
+
+    let elapsed = now.elapsed();
+    println!("Running time: {:.2?}", elapsed);
+
+    io::stdout().flush().unwrap();
 
     Ok(())
 }
