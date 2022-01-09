@@ -1,13 +1,10 @@
-use std::sync::Arc;
-
-use crate::{ray::Ray, Point3, Vec3, Material};
+use crate::{Point3, Vec3, ray::Ray};
 
 pub struct HitRecord {
     p: Point3,
     normal: Vec3,
     t: f64,
     front_face: bool,
-    material: Arc<Material>,
 }
 
 impl HitRecord {
@@ -15,8 +12,7 @@ impl HitRecord {
         p: Point3,
         outward_normal: Vec3,
         t: f64,
-        r: &Ray,
-        material: Arc<Material>,
+        r: &Ray
     ) -> Self {
         let front_face = Vec3::dot(r.dir(), &outward_normal) < 0.0;
         let normal = if front_face {
@@ -29,7 +25,6 @@ impl HitRecord {
             normal,
             t,
             front_face,
-            material,
         }
     }
 
@@ -48,17 +43,12 @@ impl HitRecord {
         self.t
     }
 
-    /// Get a reference to the hit record's material.
-    pub fn material(&self) -> &Material {
-        &self.material
-    }
-
     /// Get the hit record's front face.
     pub fn front_face(&self) -> bool {
         self.front_face
     }
 }
 
-pub trait Hittable: Sync + Send {
+pub trait Hittable {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
 }

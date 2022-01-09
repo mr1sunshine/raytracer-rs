@@ -1,7 +1,7 @@
-pub mod hittable;
-pub mod hittable_list;
+mod scene;
+pub type Scene = scene::Scene;
+
 mod ray;
-pub mod sphere;
 
 mod vec3;
 pub type Vec3 = vec3::Vec3;
@@ -14,3 +14,9 @@ pub type Camera = render::camera::Camera;
 
 mod materials;
 pub type Material = materials::Material;
+
+mod shapes;
+pub type Shape = shapes::Shape;
+
+mod object;
+pub type Object = object::Object;

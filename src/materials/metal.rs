@@ -1,4 +1,4 @@
-use crate::{ray::Ray, Color, Vec3};
+use crate::{ray::Ray, Color, Vec3, shapes::HitRecord};
 
 use super::material::Scatter;
 
@@ -19,8 +19,8 @@ impl Metal {
 impl Scatter for Metal {
     fn scatter(
         &self,
-        r: &crate::ray::Ray,
-        rec: &crate::hittable::HitRecord,
+        r: &Ray,
+        rec: &HitRecord,
     ) -> Option<(crate::ray::Ray, Color)> {
         let reflected = Vec3::reflect(&Vec3::unit_vector(r.dir()), rec.normal());
         let scattered = Ray::new(

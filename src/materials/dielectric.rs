@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use crate::{ray::Ray, Color, Vec3};
+use crate::{ray::Ray, Color, Vec3, shapes::HitRecord};
 
 use super::material::Scatter;
 
@@ -25,7 +25,7 @@ impl Scatter for Dielectric {
     fn scatter(
         &self,
         r: &crate::ray::Ray,
-        rec: &crate::hittable::HitRecord,
+        rec: &HitRecord,
     ) -> Option<(Ray, Color)> {
         let refraction_ratio = if rec.front_face() {
             1.0 / self.ir

@@ -1,34 +1,20 @@
-use std::sync::Arc;
+use crate::{ray::Ray, Point3, Vec3};
 
-use crate::{
-    hittable::{HitRecord, Hittable},
-    Material,
-    Point3, Vec3,
-};
+use super::hittable::{HitRecord, Hittable};
 
 pub struct Sphere {
     center: Point3,
     radius: f64,
-    material: Arc<Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: f64, material: Arc<Material>) -> Self {
-        Self {
-            center,
-            radius,
-            material,
-        }
+    pub fn new(center: Point3, radius: f64) -> Self {
+        Self { center, radius }
     }
 }
 
 impl Hittable for Sphere {
-    fn hit(
-        &self,
-        r: &crate::ray::Ray,
-        t_min: f64,
-        t_max: f64,
-    ) -> Option<crate::hittable::HitRecord> {
+    fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let oc = *r.orig() - self.center;
         let a = r.dir().len_squared();
         let half_b = Vec3::dot(&oc, r.dir());
@@ -53,6 +39,6 @@ impl Hittable for Sphere {
         let p = r.at(root);
         let normal = (p - self.center) / self.radius;
 
-        Some(HitRecord::new(p, normal, root, r, self.material.clone()))
+        Some(HitRecord::new(p, normal, root, r))
     }
 }

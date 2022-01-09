@@ -1,5 +1,6 @@
 use crate::materials::Scatter;
-use crate::{hittable::Hittable, ray::Ray, Color, Vec3};
+use crate::scene::Scene;
+use crate::{ray::Ray, Color, Vec3};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rand::Rng;
 use rayon::iter::IntoParallelIterator;
@@ -37,14 +38,14 @@ impl Renderer {
         })
     }
 
-    fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
+    fn ray_color(r: &Ray, world: &Scene, depth: i32) -> Color {
         // If we've exceeded the ray bounce limit, no more light is gathered.
         if depth <= 0 {
             return Color::new(0.0, 0.0, 0.0);
         }
 
-        if let Some(rec) = world.hit(r, 0.001, std::f64::INFINITY) {
-            if let Some((scattered, attenuation)) = rec.material().scatter(r, &rec) {
+        if let Some((rec, material)) = world.hit(r, 0.001, std::f64::INFINITY) {
+            if let Some((scattered, attenuation)) = material.scatter(r, &rec) {
                 return attenuation * Self::ray_color(&scattered, world, depth - 1);
             } else {
                 return Color::new(0.0, 0.0, 0.0);
@@ -65,7 +66,7 @@ impl Renderer {
         column: i32,
         row: i32,
         camera: &Camera,
-        world: &dyn Hittable,
+        world: &Scene,
     ) -> Color {
         let pixels: Vec<_> = (0..self.samples_per_pixel)
             .into_par_iter()
@@ -84,7 +85,7 @@ impl Renderer {
             .fold(Color::new(0.0, 0.0, 0.0), |sum, &val| sum + val)
     }
 
-    fn generate_pixels(&self, camera: &Camera, world: &dyn Hittable) -> Vec<Vec<Color>> {
+    fn generate_pixels(&self, camera: &Camera, world: &Scene) -> Vec<Vec<Color>> {
         let pb = ProgressBar::new(self.height as u64);
         pb.set_style(ProgressStyle::default_bar().template(
             "{spinner:.green} {msg} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} ({eta_precise})",
@@ -150,7 +151,7 @@ impl Renderer {
         Ok(())
     }
 
-    pub fn render(&mut self, camera: &Camera, world: &dyn Hittable) -> std::io::Result<()> {
+    pub fn render(&mut self, camera: &Camera, world: &Scene) -> std::io::Result<()> {
         let now = Instant::now();
 
         let pixels = self.generate_pixels(camera, world);

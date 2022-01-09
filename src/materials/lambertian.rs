@@ -1,4 +1,4 @@
-use crate::{ray::Ray, Color, Vec3};
+use crate::{ray::Ray, Color, Vec3, shapes::HitRecord};
 
 use super::material::Scatter;
 
@@ -16,7 +16,7 @@ impl Scatter for Lambertian {
     fn scatter(
         &self,
         _r: &crate::ray::Ray,
-        rec: &crate::hittable::HitRecord,
+        rec: &HitRecord,
     ) -> Option<(crate::ray::Ray, Color)> {
         let mut scatter_direction = *rec.normal() + Vec3::random_unit_vector();
 
