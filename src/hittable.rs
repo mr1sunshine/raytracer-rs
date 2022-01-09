@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use crate::{material::Material, ray::Ray, Point3, Vec3};
+use crate::{ray::Ray, Point3, Vec3, Material};
 
 pub struct HitRecord {
     p: Point3,
     normal: Vec3,
     t: f64,
     front_face: bool,
-    material: Arc<dyn Material>,
+    material: Arc<Material>,
 }
 
 impl HitRecord {
@@ -16,7 +16,7 @@ impl HitRecord {
         outward_normal: Vec3,
         t: f64,
         r: &Ray,
-        material: Arc<dyn Material>,
+        material: Arc<Material>,
     ) -> Self {
         let front_face = Vec3::dot(r.dir(), &outward_normal) < 0.0;
         let normal = if front_face {
@@ -49,8 +49,8 @@ impl HitRecord {
     }
 
     /// Get a reference to the hit record's material.
-    pub fn material(&self) -> &dyn Material {
-        self.material.as_ref()
+    pub fn material(&self) -> &Material {
+        &self.material
     }
 
     /// Get the hit record's front face.

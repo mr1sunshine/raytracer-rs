@@ -1,3 +1,4 @@
+use crate::materials::Scatter;
 use crate::{hittable::Hittable, ray::Ray, Color, Vec3};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rand::Rng;

@@ -1,7 +1,6 @@
 use rand::Rng;
 use raytracer::{
-    hittable_list::HittableList, material::Material, sphere::Sphere, Camera, Color, Dielectric,
-    Lambertian, Metal, Point3, Renderer, Vec3,
+    hittable_list::HittableList, sphere::Sphere, Camera, Color, Material, Point3, Renderer, Vec3,
 };
 use std::{env, process::exit, sync::Arc};
 
@@ -10,7 +9,9 @@ fn random_scene() -> HittableList {
 
     let mut world = HittableList::default();
 
-    let ground_material = Arc::new(Lambertian::new(&Color::new(0.5, 0.5, 0.5)));
+    let ground_material = Arc::new(Material::Lambertian {
+        albedo: Color::new(0.5, 0.5, 0.5),
+    });
     world.add(Box::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -27,17 +28,17 @@ fn random_scene() -> HittableList {
             );
 
             if (center - Point3::new(4.0, 0.2, 0.0)).len() > 0.9 {
-                let sphere_material: Arc<dyn Material> = if choose_mat < 0.8 {
+                let sphere_material: Arc<Material> = if choose_mat < 0.8 {
                     // diffuse
                     let albedo = Color::random_vec() * Color::random_vec();
-                    Arc::new(Lambertian::new(&albedo))
+                    Arc::new(Material::Lambertian { albedo })
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random(0.5, 1.0);
                     let fuzz = rng.gen_range(0.0..0.5);
-                    Arc::new(Metal::new(&albedo, fuzz))
+                    Arc::new(Material::Metal { albedo, fuzz })
                 } else {
-                    Arc::new(Dielectric::new(1.5))
+                    Arc::new(Material::Dielectric { ir: 1.5 })
                 };
 
                 world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
@@ -45,19 +46,24 @@ fn random_scene() -> HittableList {
         }
     }
 
-    let material1 = Arc::new(Dielectric::new(1.5));
+    let material1 = Arc::new(Material::Dielectric { ir: 1.5 });
     world.add(Box::new(Sphere::new(
         Point3::new(0.0, 1.0, 0.0),
         1.0,
         material1,
     )));
-    let material2 = Arc::new(Lambertian::new(&Color::new(0.4, 0.2, 0.1)));
+    let material2 = Arc::new(Material::Lambertian {
+        albedo: Color::new(0.4, 0.2, 0.1),
+    });
     world.add(Box::new(Sphere::new(
         Point3::new(-4.0, 1.0, 0.0),
         1.0,
         material2,
     )));
-    let material3 = Arc::new(Metal::new(&Color::new(0.7, 0.6, 0.5), 0.0));
+    let material3 = Arc::new(Material::Metal {
+        albedo: Color::new(0.7, 0.6, 0.5),
+        fuzz: 0.0,
+    });
     world.add(Box::new(Sphere::new(
         Point3::new(4.0, 1.0, 0.0),
         1.0,

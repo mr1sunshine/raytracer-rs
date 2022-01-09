@@ -1,4 +1,6 @@
-use crate::{material::Material, ray::Ray, Color, Vec3};
+use crate::{ray::Ray, Color, Vec3};
+
+use super::material::Scatter;
 
 pub struct Lambertian {
     albedo: Color,
@@ -10,7 +12,7 @@ impl Lambertian {
     }
 }
 
-impl Material for Lambertian {
+impl Scatter for Lambertian {
     fn scatter(
         &self,
         _r: &crate::ray::Ray,

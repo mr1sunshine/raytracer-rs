@@ -1,6 +1,8 @@
 use rand::Rng;
 
-use crate::{material::Material, ray::Ray, Color, Vec3};
+use crate::{ray::Ray, Color, Vec3};
+
+use super::material::Scatter;
 
 pub struct Dielectric {
     ir: f64,
@@ -19,7 +21,7 @@ impl Dielectric {
     }
 }
 
-impl Material for Dielectric {
+impl Scatter for Dielectric {
     fn scatter(
         &self,
         r: &crate::ray::Ray,

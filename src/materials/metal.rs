@@ -1,4 +1,6 @@
-use crate::{material::Material, ray::Ray, Color, Vec3};
+use crate::{ray::Ray, Color, Vec3};
+
+use super::material::Scatter;
 
 pub struct Metal {
     albedo: Color,
@@ -14,7 +16,7 @@ impl Metal {
     }
 }
 
-impl Material for Metal {
+impl Scatter for Metal {
     fn scatter(
         &self,
         r: &crate::ray::Ray,
